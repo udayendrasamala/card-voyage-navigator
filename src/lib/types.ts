@@ -61,3 +61,21 @@ export interface AnalyticsData {
     delivery: number;
   };
 }
+
+export interface WebhookPayload {
+  cardId: string;
+  status: CardStatus;
+  timestamp: string;
+  location?: string;
+  notes?: string;
+  failureReason?: string;
+  agentId?: string;
+  statusType?: StatusType;
+}
+
+export interface ApiResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  error?: string;
+}
