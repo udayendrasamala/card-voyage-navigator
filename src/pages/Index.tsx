@@ -10,12 +10,36 @@ import AnalyticsPanel from "@/components/AnalyticsPanel";
 import WebhookSimulator from "@/components/WebhookSimulator";
 import { CreditCard, Search, Webhook } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { subscribeToCardUpdates } from "@/lib/api";
+import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [identifierInput, setIdentifierInput] = useState("");
   const [error, setError] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Subscribe to real-time card updates
+  useEffect(() => {
+    const unsubscribe = subscribeToCardUpdates((updatedCard) => {
+      // If we have a selected card and it was updated, update our local state
+      if (selectedCard && selectedCard.id === updatedCard.id) {
+        setSelectedCard(updatedCard);
+        
+        // Show a toast notification
+        toast({
+          title: "Card Status Updated",
+          description: `Status changed to: ${updatedCard.currentStatus.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`,
+        });
+      }
+      
+      // Always refresh data when any card is updated
+      setRefreshTrigger(prev => prev + 1);
+    });
+    
+    // Cleanup the subscription when component unmounts
+    return () => unsubscribe();
+  }, [selectedCard]);
 
   const handleSearch = () => {
     if (!identifierInput.trim()) {
@@ -40,16 +64,9 @@ const Index = () => {
   };
 
   const handleStatusUpdate = () => {
-    // Refresh data when status is updated via webhook
+    // This function is still needed for the WebhookSimulator component
+    // but most of its functionality is now handled by the subscription
     setRefreshTrigger(prev => prev + 1);
-    
-    // If a card is selected, refresh it
-    if (selectedCard) {
-      const updatedCard = getCardByIdentifier(selectedCard.id);
-      if (updatedCard) {
-        setSelectedCard(updatedCard);
-      }
-    }
   };
 
   return (

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface WebhookSimulatorProps {
   onUpdate?: () => void;
@@ -22,6 +23,7 @@ const WebhookSimulator = ({ onUpdate }: WebhookSimulatorProps) => {
     notes: "",
     statusType: "info"
   });
+  const [lastUpdateTime, setLastUpdateTime] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -58,9 +60,10 @@ const WebhookSimulator = ({ onUpdate }: WebhookSimulatorProps) => {
       const result = await simulateWebhook(payload);
 
       if (result.success) {
+        setLastUpdateTime(new Date().toLocaleTimeString());
         toast({
           title: "Status Updated",
-          description: "Card status has been updated successfully"
+          description: "Card status has been updated successfully - the UI will update in real-time"
         });
         if (onUpdate) onUpdate();
       } else {
@@ -85,7 +88,14 @@ const WebhookSimulator = ({ onUpdate }: WebhookSimulatorProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Simulate Status Update</CardTitle>
+        <CardTitle className="flex justify-between items-center">
+          <span>Simulate Status Update</span>
+          {lastUpdateTime && (
+            <Badge variant="outline" className="text-xs">
+              Last update: {lastUpdateTime}
+            </Badge>
+          )}
+        </CardTitle>
         <CardDescription>
           Test the webhook functionality by simulating a card status update
         </CardDescription>

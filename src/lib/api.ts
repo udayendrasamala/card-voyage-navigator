@@ -2,6 +2,26 @@
 import { ApiResponse, Card, StatusEvent, WebhookPayload } from "./types";
 import { mockCards } from "./mockData";
 
+// Create a custom event system for real-time updates
+type CardUpdateListener = (updatedCard: Card) => void;
+const cardUpdateListeners: CardUpdateListener[] = [];
+
+// Function to subscribe to card updates
+export const subscribeToCardUpdates = (listener: CardUpdateListener) => {
+  cardUpdateListeners.push(listener);
+  return () => {
+    const index = cardUpdateListeners.indexOf(listener);
+    if (index > -1) {
+      cardUpdateListeners.splice(index, 1);
+    }
+  };
+};
+
+// Function to notify all listeners about a card update
+const notifyCardUpdate = (card: Card) => {
+  cardUpdateListeners.forEach(listener => listener(card));
+};
+
 // This would normally be a real API call to Supabase or another backend
 export const updateCardStatus = (payload: WebhookPayload): Promise<ApiResponse> => {
   return new Promise((resolve) => {
@@ -36,6 +56,9 @@ export const updateCardStatus = (payload: WebhookPayload): Promise<ApiResponse> 
         currentStatus: payload.status,
         statusHistory: [...mockCards[cardIndex].statusHistory, newEvent]
       };
+
+      // Notify all subscribers about the card update
+      notifyCardUpdate(mockCards[cardIndex]);
 
       resolve({
         success: true,

@@ -1,12 +1,33 @@
 
-import { useState } from "react";
-import { CardStatus, StatusEvent } from "@/lib/types";
+import { useState, useEffect } from "react";
+import { CardStatus, StatusEvent, WebhookPayload } from "@/lib/types";
 import { toast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RefreshCw } from "lucide-react";
 
 export const WebhookPage = () => {
   const [apiKey, setApiKey] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookStatus, setWebhookStatus] = useState<"online" | "offline">("online");
+  const [lastChecked, setLastChecked] = useState(new Date());
+
+  // Simulate checking webhook status
+  const checkWebhookStatus = () => {
+    setIsSubmitting(true);
+    
+    // Simulate an API call to check status
+    setTimeout(() => {
+      setWebhookStatus("online");
+      setLastChecked(new Date());
+      setIsSubmitting(false);
+      
+      toast({
+        title: "Webhook Status",
+        description: "Webhook endpoint is online and ready to receive updates",
+      });
+    }, 1000);
+  };
 
   const handleGenerateApiKey = () => {
     // In a real app, this would be generated and stored securely on the server
@@ -30,6 +51,24 @@ export const WebhookPage = () => {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Card Status Webhook Management</h1>
+      
+      <Alert className="mb-6">
+        <AlertTitle className="flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${webhookStatus === "online" ? "bg-green-500" : "bg-red-500"}`}></span>
+          Webhook Status: {webhookStatus === "online" ? "Online" : "Offline"}
+        </AlertTitle>
+        <AlertDescription className="flex justify-between items-center">
+          <span>Last checked: {lastChecked.toLocaleTimeString()}</span>
+          <button 
+            onClick={checkWebhookStatus}
+            disabled={isSubmitting}
+            className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm"
+          >
+            <RefreshCw className="h-3 w-3" />
+            {isSubmitting ? "Checking..." : "Check Now"}
+          </button>
+        </AlertDescription>
+      </Alert>
       
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Generate API Key</h2>
@@ -94,7 +133,7 @@ export const WebhookPage = () => {
           </pre>
         </div>
         
-        <div>
+        <div className="mb-6">
           <h3 className="font-medium mb-2">Request Body Example:</h3>
           <pre className="p-2 bg-gray-100 rounded block overflow-x-auto">
 {`{
@@ -107,6 +146,13 @@ export const WebhookPage = () => {
   "statusType": "info"
 }`}
           </pre>
+        </div>
+        
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="font-medium text-blue-800 mb-2">Real-time Updates</h3>
+          <p className="text-blue-700">
+            This webhook system provides real-time updates. When a status change is received via webhook, all connected clients will be instantly notified of the change without requiring a page refresh.
+          </p>
         </div>
       </div>
     </div>
