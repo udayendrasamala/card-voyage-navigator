@@ -1,22 +1,20 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/lib/types";
-import { getCardByIdentifier, mockAnalytics } from "@/lib/mockData";
+import { mockAnalytics } from "@/lib/mockData";
 import DashboardLayout from "@/components/DashboardLayout";
 import SearchBar from "@/components/SearchBar";
 import CardDetails from "@/components/CardDetails";
 import CardJourney from "@/components/CardJourney";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
 import WebhookSimulator from "@/components/WebhookSimulator";
-import { CreditCard, Search } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { subscribeToCardUpdates } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [identifierInput, setIdentifierInput] = useState("");
-  const [error, setError] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Subscribe to real-time card updates
@@ -41,26 +39,8 @@ const Index = () => {
     return () => unsubscribe();
   }, [selectedCard]);
 
-  const handleSearch = () => {
-    if (!identifierInput.trim()) {
-      setError("Please enter a mobile number, PAN, or card ID");
-      return;
-    }
-
-    const card = getCardByIdentifier(identifierInput);
-    
-    if (card) {
-      setSelectedCard(card);
-      setError("");
-    } else {
-      setError("No card found with the provided details");
-      setSelectedCard(null);
-    }
-  };
-
   const handleCardSelect = (card: Card) => {
     setSelectedCard(card);
-    setError("");
   };
 
   const handleStatusUpdate = () => {
@@ -78,37 +58,12 @@ const Index = () => {
             <p className="text-gray-600">Track and manage card lifecycle from approval to delivery</p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-3">
-            <SearchBar onCardSelect={handleCardSelect} />
-            
-            <div className="flex">
-              <input
-                type="text"
-                placeholder="Mobile No. or PAN Last 4"
-                className="border border-gray-300 rounded-l-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={identifierInput}
-                onChange={(e) => setIdentifierInput(e.target.value)}
-              />
-              <button 
-                className="bg-blue-600 text-white px-4 py-2.5 rounded-r-lg hover:bg-blue-700 transition-colors flex items-center"
-                onClick={handleSearch}
-              >
-                <Search className="h-5 w-5 mr-1" />
-                Search
-              </button>
-            </div>
-          </div>
+          <SearchBar onCardSelect={handleCardSelect} />
         </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
-            {!selectedCard && !error && (
+            {!selectedCard && (
               <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border border-gray-200 shadow-sm">
                 <div className="p-4 rounded-full bg-blue-100 mb-4">
                   <CreditCard className="h-8 w-8 text-blue-600" />
