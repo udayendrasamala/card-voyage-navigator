@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { Card } from "@/lib/types";
-import { searchCards } from "@/lib/mockData";
+import { searchCards } from "@/lib/supabaseApi";
 import { Button } from "@/components/ui/button";
 
 interface SearchBarProps {
@@ -13,13 +13,22 @@ const SearchBar = ({ onCardSelect }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Card[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSearch = (value?: string) => {
+  const handleSearch = async (value?: string) => {
     const searchValue = value || query;
     if (searchValue.trim().length > 2) {
-      const searchResults = searchCards(searchValue);
-      setResults(searchResults);
-      setIsDropdownOpen(true);
+      setIsLoading(true);
+      try {
+        const searchResults = await searchCards(searchValue);
+        setResults(searchResults);
+        setIsDropdownOpen(true);
+      } catch (error) {
+        console.error('Search error:', error);
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       setResults([]);
       setIsDropdownOpen(false);
@@ -62,8 +71,9 @@ const SearchBar = ({ onCardSelect }: SearchBarProps) => {
         <Button 
           onClick={handleSearchClick}
           className="rounded-l-none"
+          disabled={isLoading}
         >
-          Search
+          {isLoading ? "Searching..." : "Search"}
         </Button>
       </div>
 
@@ -86,7 +96,7 @@ const SearchBar = ({ onCardSelect }: SearchBarProps) => {
         </div>
       )}
 
-      {isDropdownOpen && query.trim().length > 2 && results.length === 0 && (
+      {isDropdownOpen && query.trim().length > 2 && results.length === 0 && !isLoading && (
         <div className="absolute mt-1 w-full bg-white rounded-md shadow-lg z-10 border border-gray-200">
           <div className="px-4 py-2 text-gray-500">No results found</div>
         </div>
