@@ -7,9 +7,7 @@ import SearchBar from "@/components/SearchBar";
 import CardDetails from "@/components/CardDetails";
 import CardJourney from "@/components/CardJourney";
 import AnalyticsPanel from "@/components/AnalyticsPanel";
-import WebhookSimulator from "@/components/WebhookSimulator";
 import { CreditCard } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { subscribeToCardUpdates } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 
@@ -86,33 +84,6 @@ const Index = () => {
             <div className="mt-8">
               <AnalyticsPanel data={mockAnalytics} />
             </div>
-          </div>
-          
-          <div>
-            <Tabs defaultValue="simulator">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="simulator">Simulator</TabsTrigger>
-                <TabsTrigger value="help">Help</TabsTrigger>
-              </TabsList>
-              <TabsContent value="simulator">
-                <div className="mt-4">
-                  <WebhookSimulator onUpdate={handleStatusUpdate} />
-                </div>
-              </TabsContent>
-              <TabsContent value="help">
-                <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
-                  <h3 className="font-medium text-lg mb-2">Using the Simulator</h3>
-                  <p className="text-gray-600 mb-4">
-                    The webhook simulator allows you to test status updates in real-time. 
-                    In a production environment, external systems would send webhook requests 
-                    to update card statuses automatically.
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Try updating the status of card-001, card-002, or card-003 to see real-time updates.
-                  </p>
-                </div>
-              </TabsContent>
-            </Tabs>
           </div>
         </div>
       </div>

@@ -1,6 +1,9 @@
 
 import { ApiResponse, Card, StatusEvent, WebhookPayload } from "./types";
 import { mockCards } from "./mockData";
+import {Cardm} from "./cards";
+import { connectDB } from "./db";
+
 
 // Create a custom event system for real-time updates
 type CardUpdateListener = (updatedCard: Card) => void;
@@ -23,53 +26,173 @@ const notifyCardUpdate = (card: Card) => {
 };
 
 // This would normally be a real API call to Supabase or another backend
-export const updateCardStatus = (payload: WebhookPayload): Promise<ApiResponse> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Find the card in our mock data
-      const cardIndex = mockCards.findIndex(card => card.id === payload.cardId);
-      
-      if (cardIndex === -1) {
-        resolve({
-          success: false,
-          message: "Card not found",
-          error: `No card found with ID: ${payload.cardId}`
-        });
-        return;
-      }
+// export const updateCardStatus = async(payload: WebhookPayload): Promise<ApiResponse> => {
+//   return new Promise((resolve) => {
+//     setTimeout(() => {
+//       // Find the card in our mock data
+//       const card = await Card.findById(payload.cardId);
 
-      // Create a new status event
-      const newEvent: StatusEvent = {
-        id: `evt-${payload.cardId}-${Date.now()}`,
-        status: payload.status,
-        timestamp: payload.timestamp || new Date().toISOString(),
-        location: payload.location,
-        notes: payload.notes,
-        failureReason: payload.failureReason,
-        agentId: payload.agentId,
-        statusType: payload.statusType || "info"
-      };
+//       if (!card) {
+//         return {
+//           success: false,
+//           message: "Card not found",
+//           error: `No card found with ID: ${payload.cardId}`
+//         };
+//       }
+  
+//       // Create a new status event
+//       const newEvent: StatusEvent = {
+//         id: `evt-${payload.cardId}-${Date.now()}`,
+//         status: payload.status,
+//         timestamp: payload.timestamp || new Date().toISOString(),
+//         location: payload.location,
+//         notes: payload.notes,
+//         failureReason: payload.failureReason,
+//         agentId: payload.agentId,
+//         statusType: payload.statusType || "info"
+//       };
+  
+//       // Update the card document
+//       card.currentStatus = payload.status;
+//       card.statusHistory.push(newEvent);
+//       await card.save();
 
-      // Update the card in our mock database
-      mockCards[cardIndex] = {
-        ...mockCards[cardIndex],
-        currentStatus: payload.status,
-        statusHistory: [...mockCards[cardIndex].statusHistory, newEvent]
-      };
+//       // Notify all subscribers about the card update
+//       notifyCardUpdate(mockCards[cardIndex]);
 
-      // Notify all subscribers about the card update
-      notifyCardUpdate(mockCards[cardIndex]);
+//       return {
+//         success: true,
+//         message: "Card status updated successfully",
+//         data: card
+//       };
+//     } catch (err) {
+//       return {
+//         success: false,
+//         message: "Failed to update card status",
+//         error: err.message
+//       };
+//     }, 300); // Simulate network delay
+//   });
+// };
 
-      resolve({
-        success: true,
-        message: "Card status updated successfully",
-        data: mockCards[cardIndex]
-      });
-    }, 300); // Simulate network delay
-  });
-};
+// export const updateCardStatus = async (payload: WebhookPayload): Promise<ApiResponse> => {
+//   try {
+//     // Find the card in MongoDB by _id (cardId)
+//     let card = new Cardm({
+//       _id: payload.cardId,
+//       currentStatus: payload.status,
+//       statusHistory: [],
+//     });
+
+//     if (!card) {
+//       card = new Cardm({
+//         _id: payload.cardId,
+//         currentStatus: payload.status,
+//         statusHistory: [],
+//       });
+//       return
+//     }
+
+//     // if (!card) {
+//     //   return {
+//     //     success: false,
+//     //     message: "Card not found",
+//     //     error: `No card found with ID: ${payload.cardId}`
+//     //   };
+//     // }
+
+//     // Create a new status event
+//     const newEvent: StatusEvent = {
+//       id: `evt-${payload.cardId}-${Date.now()}`,
+//       status: payload.status,
+//       timestamp: payload.timestamp || new Date().toISOString(),
+//       location: payload.location,
+//       notes: payload.notes,
+//       failureReason: payload.failureReason,
+//       agentId: payload.agentId,
+//       statusType: payload.statusType || "info"
+//     };
+
+//     // Update the card document
+//     card.currentStatus = payload.status;
+//     card.statusHistory.push(newEvent);
+//     await card.save();
+
+//     // Optionally notify UI clients
+//     // notifyCardUpdate(card); // assumes this is compatible with Mongoose doc
+
+//     return {
+//       success: true,
+//       message: "Card status updated successfully",
+//       data: card
+//     };
+//   } catch (err) {
+//     return {
+//       success: false,
+//       message: "Failed to update card status",
+//       error: err.message
+//     };
+//   }
+// };
+
 
 // Webhook handler function
+
+export const updateCardStatus = async (payload: WebhookPayload): Promise<ApiResponse> => {
+  try {
+    const db = await connectDB();
+    const cardsCollection = db.collection('cards');
+    let existingCard = new Cardm({
+            _id: payload.cardId,
+            currentStatus: payload.status,
+            statusHistory: [],
+          });
+
+    //const existingCard = await cardsCollection.findOne({ id: payload.cardId });
+
+    if (!existingCard) {
+      return {
+        success: false,
+        message: "Card not found",
+        error: `No card found with ID: ${payload.cardId}`
+      };
+    }
+
+    const newEvent: StatusEvent = {
+      id: `evt-${payload.cardId}-${Date.now()}`,
+      status: payload.status,
+      timestamp: payload.timestamp || new Date().toISOString(),
+      location: payload.location,
+      notes: payload.notes,
+      failureReason: payload.failureReason,
+      agentId: payload.agentId,
+      statusType: payload.statusType || "info"
+    };
+
+    const updatedCard = await cardsCollection.findOneAndUpdate(
+      { id: payload.cardId },
+      {
+        $set: { currentStatus: payload.status },
+        $push: { statusHistory: newEvent }
+      },
+      { returnDocument: 'after' }
+    );
+
+    return {
+      success: true,
+      message: "Card status updated successfully",
+      data: updatedCard.value
+    };
+  } catch (err: any) {
+    console.error('DB update failed:', err);
+    return {
+      success: false,
+      message: 'Internal server error',
+      error: err.message || 'Unknown error'
+    };
+  }
+};
+
 export const handleWebhookRequest = async (
   apiKey: string,
   requestApiKey: string,
