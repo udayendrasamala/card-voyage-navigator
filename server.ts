@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import { updateCardStatus, createCard, getCard, getCards } from './src/lib/api';
@@ -6,7 +5,7 @@ import { WebhookPayload, ApiResponse } from './src/lib/types';
 import { connectDB } from './src/lib/db';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = 3001;
 
 // Middleware to parse JSON bodies
 app.use(bodyParser.json());
